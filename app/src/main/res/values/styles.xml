@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ToggleButtonStyle" parent="Widget.AppCompat.Button">
+        <item name="android:backgroundTint">#000000</item>
+        <item name="android:textColor">#FFFFFF</item> <!-- Optional -->
+        <item name="android:radius">10dp</item>
+    </style>
+
+    <!-- Custom Checkbox Style -->
+    <style name="CustomCheckboxStyle" parent="Widget.AppCompat.CompoundButton.CheckBox">
+        <item name="android:button">@drawable/custom_checkbox</item>
+    </style>
+</resources>

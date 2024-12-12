@@ -70,22 +70,20 @@ public class AdminActivity extends AppCompatActivity {
     }
 
     private void fetchEvents() {
-        db.collection("events")
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                Event event = document.toObject(Event.class);
-                                event.setEventId(document.getId());
-                                eventList.add(event);
-                            }
-                            eventAdapter.notifyDataSetChanged();
-                        } else {
-                            Log.w("AdminActivity", "Error getting documents.", task.getException());
-                        }
-                    }
-                });
+        db.collection("events").addSnapshotListener((value, error) -> {
+            if (error != null) {
+                Log.w("HomeActivity", "Listen failed.", error);
+                return;
+            }
+
+            List<Event> events = new ArrayList<>();
+            for (QueryDocumentSnapshot document : value) {
+                Event event = document.toObject(Event.class);
+                event.setEventId(document.getId());
+                events.add(event);
+            }
+            eventAdapter.events = events;
+            eventAdapter.notifyDataSetChanged();
+        });
     }
 }

@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
         Button getStartedButton = findViewById(R.id.getStartedButton);
         getStartedButton.setBackgroundColor(getResources().getColor(android.R.color.black));
         getStartedButton.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, Auth.class);
+            Intent intent = new Intent(MainActivity.this, AuthActivity.class);
             startActivity(intent);
         });
     }

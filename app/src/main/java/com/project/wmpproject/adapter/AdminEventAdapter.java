@@ -22,8 +22,12 @@ import java.util.List;
 
 public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.EventViewHolder> {
 
-    private List<Event> events;
+    public List<Event> events;
     private FirebaseFirestore db;
+
+    public AdminEventAdapter() {
+
+    }
 
     public AdminEventAdapter(List<Event> events) {
         this.events = events;

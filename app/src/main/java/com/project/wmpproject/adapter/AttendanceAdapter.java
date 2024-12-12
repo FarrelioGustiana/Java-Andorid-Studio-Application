@@ -5,6 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -14,6 +15,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.project.wmpproject.R;
 import com.project.wmpproject.model.Attendance;
+import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -49,9 +51,18 @@ public class AttendanceAdapter extends RecyclerView.Adapter<AttendanceAdapter.At
         userRef.get().addOnSuccessListener(doc -> {
             if (doc.exists()) {
                 String username = doc.getString("username");
+                String profileImage = doc.getString("profileImageUrl");
                 Timestamp checkInTime = (Timestamp) attendance.checkinTime;
 
                 holder.usernameTextView.setText(username);
+
+                if (profileImage != null) {
+                    Picasso.get()
+                            .load(profileImage)
+                            .placeholder(R.drawable.ic_default_profile) // Placeholder image
+                            .error(R.drawable.ic_default_profile) // Error image
+                            .into(holder.profileImageView);
+                }
 
                 if (checkInTime != null) {
                    // Convert Timestamp to Date
@@ -61,7 +72,9 @@ public class AttendanceAdapter extends RecyclerView.Adapter<AttendanceAdapter.At
                 }
             }
         }).addOnFailureListener(e -> {
-
+            Toast.makeText(holder.itemView.getContext(),
+                    "Error fetching user data: " + e.getMessage(),
+                    Toast.LENGTH_SHORT).show();
         });
     }
 

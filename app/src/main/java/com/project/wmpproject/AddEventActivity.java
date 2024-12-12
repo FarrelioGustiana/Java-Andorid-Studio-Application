@@ -1,6 +1,7 @@
 package com.project.wmpproject;
 
 import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,6 +15,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -31,18 +33,20 @@ import java.util.UUID;
 
 public class AddEventActivity extends AppCompatActivity {
 
-    private EditText titleEditText, descriptionEditText, dateTimeEditText, locationEditText;
+    private EditText titleEditText, descriptionEditText,  locationEditText;
     private ImageView eventImageView;
     private Button addButton;
     private FirebaseFirestore db;
     private Uri selectedImageUri;
     private ActivityResultLauncher<PickVisualMediaRequest> pickMedia;
+    private EditText dateEditText, timeEditText;
     private Calendar selectedDate;
     private ImageView dateTimeIcon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_add_event);
 
@@ -56,8 +60,8 @@ public class AddEventActivity extends AppCompatActivity {
 
         titleEditText = findViewById(R.id.addEventTitle);
         descriptionEditText = findViewById(R.id.addEventDescription);
-        dateTimeEditText = findViewById(R.id.addEventDateTime);
-        dateTimeIcon = findViewById(R.id.addEventDateTimeIcon);
+        dateEditText = findViewById(R.id.addEventDate);
+        timeEditText = findViewById(R.id.addEventTime);
         locationEditText = findViewById(R.id.addEventLocation);
         eventImageView = findViewById(R.id.addEventImage);
         addButton = findViewById(R.id.addEventButton);
@@ -77,8 +81,8 @@ public class AddEventActivity extends AppCompatActivity {
 
         selectedDate = Calendar.getInstance(); // Initialize with current date
 
-        dateTimeEditText.setOnClickListener(v -> showDatePickerDialog());
-        dateTimeIcon.setOnClickListener(v -> showDatePickerDialog());
+        dateEditText.setOnClickListener(v -> showDatePickerDialog());
+        timeEditText.setOnClickListener(v -> showTimePickerDialog());
 
         eventImageView.setOnClickListener(v -> pickMedia.launch(new PickVisualMediaRequest.Builder()
                 .setMediaType(PickVisualMedia.ImageOnly.INSTANCE)
@@ -103,21 +107,41 @@ public class AddEventActivity extends AppCompatActivity {
                     selectedDate.set(Calendar.YEAR, year1);
                     selectedDate.set(Calendar.MONTH, monthOfYear);
                     selectedDate.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                    updateDateTimeEditText();
+                    updateDateEditText();
                 }, year, month, day);
         datePickerDialog.show();
     }
 
-    private void updateDateTimeEditText() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
-        String formattedDate = dateFormat.format(selectedDate.getTime());
-        dateTimeEditText.setText(formattedDate);
+    private void showTimePickerDialog() {
+        int hour = selectedDate.get(Calendar.HOUR_OF_DAY);
+        int minute = selectedDate.get(Calendar.MINUTE);
+
+        TimePickerDialog timePickerDialog = new TimePickerDialog(this,
+                (view, hourOfDay, minute1) -> {
+                    selectedDate.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                    selectedDate.set(Calendar.MINUTE, minute1);
+                    updateTimeEditText();
+                }, hour, minute, true); // true for 24-hour format
+        timePickerDialog.show();
     }
+
+    private void updateDateEditText() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String formattedDate = dateFormat.format(selectedDate.getTime());
+        dateEditText.setText(formattedDate);
+    }
+
+    private void updateTimeEditText() {
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        String formattedTime = timeFormat.format(selectedDate.getTime());
+        timeEditText.setText(formattedTime);
+    }
+
 
     private void uploadImageAndAddEvent() {
         StorageReference storageRef = FirebaseStorage.getInstance().getReference();
         String imageName = "event_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".jpg";
-        StorageReference imageRef = storageRef.child("event_images/" + imageName);
+        StorageReference imageRef = storageRef.child("events/" + imageName);
 
         imageRef.putFile(selectedImageUri)
                 .addOnSuccessListener(taskSnapshot -> imageRef.getDownloadUrl().addOnSuccessListener(this::addEventToFirestore))
@@ -131,7 +155,7 @@ public class AddEventActivity extends AppCompatActivity {
         String imageUrl = uri.toString();
         String title = titleEditText.getText().toString();
         String description = descriptionEditText.getText().toString();
-        String dateTime = dateTimeEditText.getText().toString(); // Get the date and time string from the DateInput
+        String dateTime = dateEditText.getText().toString() + "T" + timeEditText.getText().toString();  // Get the date and time string from the DateInput
         String location = locationEditText.getText().toString();
 
         String eventId = UUID.randomUUID().toString();

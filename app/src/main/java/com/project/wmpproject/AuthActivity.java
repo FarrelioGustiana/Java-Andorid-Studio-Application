@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class Auth extends AppCompatActivity {
+public class AuthActivity extends AppCompatActivity {
 
     private EditText usernameEditText, emailEditText, passwordEditText;
     private Button registerToggleButton, loginToggleButton, authButton;
@@ -129,17 +129,17 @@ public class Auth extends AppCompatActivity {
                         // Save the user data in Firestore
                         db.collection("users").document(userId).set(userData)
                                 .addOnSuccessListener(aVoid -> {
-                                    Toast.makeText(Auth.this, "Registration Successful!", Toast.LENGTH_SHORT).show();
-                                    Intent intent = new Intent(Auth.this, HomeActivity.class);
+                                    Toast.makeText(AuthActivity.this, "Registration Successful!", Toast.LENGTH_SHORT).show();
+                                    Intent intent = new Intent(AuthActivity.this, HomeActivity.class);
                                     startActivity(intent);
                                 })
                                 .addOnFailureListener(e -> {
-                                    Toast.makeText(Auth.this, "Failed to save user data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(AuthActivity.this, "Failed to save user data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                                 });
 
                     } else {
                         // If failed
-                        Toast.makeText(Auth.this, "Registration failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(AuthActivity.this, "Registration failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
 
@@ -148,15 +148,43 @@ public class Auth extends AppCompatActivity {
     private void userLogin(String email, String password) {
         auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
-                    // If Login Succeed
-                   if (task.isSuccessful()) {
-                       Toast.makeText(Auth.this, "Login Success", Toast.LENGTH_SHORT).show();
-                       Intent intent = new Intent(Auth.this, HomeActivity.class);
-                       startActivity(intent);
-                   } else {
-                       // If Login Failed
-                       Toast.makeText(Auth.this, "Login failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                   }
+                    if (task.isSuccessful()) {
+                        // Login success
+                        String userId = task.getResult().getUser().getUid();
+                        checkUserRole(userId); // Check the user's role
+                    } else {
+                        // Login failed
+                        Toast.makeText(AuthActivity.this, "Login failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                 });
     }
+
+    private void checkUserRole(String userId) {
+        db.collection("users").document(userId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (task.getResult().exists()) {
+                            // User data found
+                            String role = task.getResult().getString("role");
+                            if ("admin".equals(role)) {
+                                // Go to AdminActivity
+                                startActivity(new Intent(AuthActivity.this, AdminActivity.class));
+                            } else {
+                                // Go to HomeActivity (or handle other roles)
+                                startActivity(new Intent(AuthActivity.this, HomeActivity.class));
+                            }
+                            finish();
+                        } else {
+                            // User data not found (handle this case appropriately)
+                            Toast.makeText(AuthActivity.this, "User data not found", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        // Error fetching user data
+                        Toast.makeText(AuthActivity.this, "Error fetching user data", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+
 }

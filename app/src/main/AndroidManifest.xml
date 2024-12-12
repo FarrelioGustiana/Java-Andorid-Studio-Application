@@ -34,9 +34,6 @@
             android:name=".HomeActivity"
             android:exported="false" />
         <activity
-            android:name=".Home"
-            android:exported="false" />
-        <activity
             android:name=".Auth"
             android:exported="false" />
         <activity

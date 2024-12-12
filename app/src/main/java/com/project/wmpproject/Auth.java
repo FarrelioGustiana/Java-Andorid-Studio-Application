@@ -1,5 +1,6 @@
 package com.project.wmpproject;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.*;
@@ -9,15 +10,25 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class Auth extends AppCompatActivity {
 
+    private EditText usernameEditText, emailEditText, passwordEditText;
     private Button registerToggleButton, loginToggleButton, authButton;
     private boolean isLoginMode = false;
     private LinearLayout usernameField;
     private TextView forgotPasswordTextView;
     private CheckBox termsCheckBox;
     private Button btnSubmit;
+
+    private FirebaseAuth auth;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +41,10 @@ public class Auth extends AppCompatActivity {
             return insets;
         });
 
+        // Initialize XML Elements by it's own ID
+        usernameEditText = findViewById(R.id.usernameEditText);
+        emailEditText = findViewById(R.id.emailEditText);
+        passwordEditText = findViewById(R.id.passwordEditText);
         registerToggleButton = findViewById(R.id.registerToggleButton);
         loginToggleButton = findViewById(R.id.loginToggleButton);
         usernameField = findViewById(R.id.usernameField);
@@ -37,11 +52,19 @@ public class Auth extends AppCompatActivity {
         termsCheckBox = findViewById(R.id.termsCheckBox);
         btnSubmit = findViewById(R.id.btnSubmit);
 
+        // Initialize Firebase Auth
+        auth = FirebaseAuth.getInstance();
+
+        // Initialize Firebase Firestore
+        db = FirebaseFirestore.getInstance();
 
         registerToggleButton.setOnClickListener(v -> setAuthMode(false));
         loginToggleButton.setOnClickListener(v -> setAuthMode(true));
 
-        setAuthMode(isLoginMode);
+        btnSubmit.setOnClickListener(v -> handleSubmit());
+
+        // Set the auth into login mode as the default mode
+        setAuthMode(true);
 
     }
 
@@ -63,5 +86,77 @@ public class Auth extends AppCompatActivity {
             termsCheckBox.setVisibility(View.VISIBLE);
             btnSubmit.setText("Register");
         }
+    }
+
+    private void handleSubmit() {
+        String email = emailEditText.getText().toString().trim();
+        String password = passwordEditText.getText().toString().trim();
+
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!isLoginMode) {
+            String username = usernameEditText.getText().toString().trim();
+            if (username.isEmpty()) {
+                Toast.makeText(this, "Please enter a username", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!termsCheckBox.isChecked()) {
+                Toast.makeText(this, "Please accept the terms and conditions", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            registerUser(email, password, username.trim());
+        } else {
+            userLogin(email, password);
+        }
+    }
+
+    private void registerUser(String email, String password, String username) {
+        auth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, task -> {
+                    // If Succeed
+                    if (task.isSuccessful()) {
+                        // Get the newly created user ID
+                        String userId = task.getResult().getUser().getUid();
+
+                        // Create a user data map
+                        Map<String, Object> userData = new HashMap<>();
+                        userData.put("username", username);
+                        userData.put("email", email);
+
+                        // Save the user data in Firestore
+                        db.collection("users").document(userId).set(userData)
+                                .addOnSuccessListener(aVoid -> {
+                                    Toast.makeText(Auth.this, "Registration Successful!", Toast.LENGTH_SHORT).show();
+                                    Intent intent = new Intent(Auth.this, HomeActivity.class);
+                                    startActivity(intent);
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(Auth.this, "Failed to save user data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                });
+
+                    } else {
+                        // If failed
+                        Toast.makeText(Auth.this, "Registration failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+    }
+
+    private void userLogin(String email, String password) {
+        auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, task -> {
+                    // If Login Succeed
+                   if (task.isSuccessful()) {
+                       Toast.makeText(Auth.this, "Login Success", Toast.LENGTH_SHORT).show();
+                       Intent intent = new Intent(Auth.this, HomeActivity.class);
+                       startActivity(intent);
+                   } else {
+                       // If Login Failed
+                       Toast.makeText(Auth.this, "Login failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                   }
+                });
     }
 }

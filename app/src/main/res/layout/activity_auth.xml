@@ -57,6 +57,7 @@
 
         <!-- Username Field -->
         <LinearLayout
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -72,6 +73,7 @@
                 android:textStyle="bold" />
 
             <EditText
+                android:id="@+id/usernameEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/auth_edit_text"
@@ -99,6 +101,7 @@
                 android:textStyle="bold" />
 
             <EditText
+                android:id="@+id/emailEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/auth_edit_text"
@@ -127,6 +130,7 @@
                 android:textStyle="bold" />
 
             <EditText
+                android:id="@+id/passwordEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/auth_edit_text"

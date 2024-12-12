@@ -87,9 +87,13 @@ public class EventDetailsActivity extends AppCompatActivity {
                             fetchAttendanceData(eventId);
                         } else {
                             // Handle the case where event data is not found
+                            Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
+                            finish();
                         }
                     } else {
                         Log.w("EventDetailsActivity", "Error fetching event data", task.getException());
+                        Toast.makeText(this, "Error fetching event data", Toast.LENGTH_SHORT).show();
+                        finish();
                     }
                 });
     }
@@ -107,6 +111,29 @@ public class EventDetailsActivity extends AppCompatActivity {
             return;
         }
 
+        String userId = auth.getCurrentUser().getUid();
+
+        // Check if the user has already checked in
+        db.collection("events").document(eventId).collection("attendance")
+                .whereEqualTo("userId", userId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (task.getResult().isEmpty()) {
+                            // User has not checked in, proceed with check-in
+                            performCheckIn(userId);
+                        } else {
+                            // User has already checked in
+                            Toast.makeText(this, "You have already checked in to this event.", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Log.w("EventDetailsActivity", "Error checking attendance", task.getException());
+                        Toast.makeText(this, "Error checking attendance", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void performCheckIn(String userId) {
         String dateTime = event.getDateTime();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
         try {
@@ -118,7 +145,6 @@ public class EventDetailsActivity extends AppCompatActivity {
                 return;
             }
 
-            String userId = auth.getCurrentUser().getUid();
             // Get the subcollection reference
             CollectionReference attendanceRef = db.collection("events").document(eventId).collection("attendance");
 
@@ -159,6 +185,7 @@ public class EventDetailsActivity extends AppCompatActivity {
                         populateAttendanceList(attendanceData);
                     } else {
                         Log.w("EventDetailsActivity", "Error fetching attendance data", task.getException());
+                        Toast.makeText(this, "Error fetching attendance data", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
